@@ -31,3 +31,17 @@ def get_candle_count(user_id: int) -> int:
         )
         row = cursor.fetchone()
         return row[0] if row else 0
+
+def get_total_users_count() -> int:
+    with get_connection() as conn:
+        cursor=conn.execute('SELECT COUNT(*) FROM candle_counts')
+        return cursor.fetchone()[0]
+
+def get_top_candlers(page: int=1, per_page: int=5):
+    offset=(page-1)*per_page
+    with get_connection() as conn:
+        cursor=conn.execute(
+            'SELECT user_id, count FROM candle_counts ORDER BY count DESC LIMIT ? OFFSET ?',
+            (per_page, offset)
+        )
+        return cursor.fetchall()

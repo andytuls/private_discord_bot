@@ -4,22 +4,134 @@ from database.queries import (
     has_user_reacted,
     add_reaction,
     increment_candle_count,
-    get_candle_count
+    get_candle_count,
+    get_total_users_count,
+    get_top_candlers
 )
+
+def declension_candles(count: int) -> str:
+    if count%10==1 and count%100!=11:
+        return "свечка"
+    elif count%10 in (2, 3, 4) and count%100 not in (12, 13, 14):
+        return "свечки"
+    else:
+        return "свечек"
+
+class TopView(discord.ui.View):
+    def __init__(self, user_id: int, page: int, per_page: int, total_pages: int):
+        super().__init__(timeout=120)
+        self.user_id = user_id
+        self.page = page
+        self.per_page = per_page
+        self.total_pages = total_pages
+        self.back_button.disabled = (self.page == 1)
+        self.forward_button.disabled = (self.page == self.total_pages)
+
+    async def update_embed(self, interaction: discord.Interaction):
+        users = get_top_candlers(page=self.page, per_page=self.per_page)
+        embed = discord.Embed(
+            title="🏆 Топ пользователей по свечкам",
+            color=discord.Color.gold()
+        )
+
+        lines = []
+        for idx, (user_id, count) in enumerate(users, start=(self.page - 1) * self.per_page + 1):
+            user = interaction.client.get_user(user_id)
+            if user is None:
+                try:
+                    user = await interaction.client.fetch_user(user_id)
+                except discord.NotFound:
+                    user = None
+            name = user.name if user else "Неизвестный пользователь"
+            word = declension_candles(count)
+
+            medals = {1: "🥇 ", 2: "🥈 ", 3: "🥉 "}
+            medal = medals.get(idx, "")
+            lines.append(f"`{idx}.` {medal}{name} — **{count}** {word}")
+
+        embed.description = "\n".join(lines)
+        embed.set_footer(
+            text=f"Страница {self.page} из {self.total_pages}  •  Всего участников: {get_total_users_count()}"
+        )
+
+        self.back_button.disabled = (self.page == 1)
+        self.forward_button.disabled = (self.page == self.total_pages)
+
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label="◀️ Назад", style=discord.ButtonStyle.secondary)
+    async def back_button(self, interaction: discord.Interaction, _button: discord.ui.Button):
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message("❌ Эти кнопки не для тебя!", ephemeral=True)
+            return
+
+        if self.page > 1:
+            self.page -= 1
+            await self.update_embed(interaction)
+
+    @discord.ui.button(label="Вперёд ▶️", style=discord.ButtonStyle.primary)
+    async def forward_button(self, interaction: discord.Interaction, _button: discord.ui.Button):
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message("❌ Эти кнопки не для тебя!", ephemeral=True)
+            return
+
+        if self.page < self.total_pages:
+            self.page += 1
+            await self.update_embed(interaction)
+
 
 class Reactions(commands.Cog):
     def __init__(self, bot):
         self.bot=bot
 
-    @commands.command(aliases=['свеча'])
+    @commands.command(aliases=['свеча', 'свечка', 'свечки', 'cdtxf'])
     async def свечи(self, ctx, member: discord.Member=None):
         if member is None:
             member=ctx.author
         count=get_candle_count(member.id)
+        word=declension_candles(count)
         if member==ctx.author:
-            await ctx.send(f'🕯️У вас **{count}** свечек.')
+            await ctx.send(f'🕯️У вас **{count}** {word}.')
         else:
-            await ctx.send (f'🕯️У пользователя "{member.name}" - **{count}** свечек.')
+            await ctx.send (f'🕯️У пользователя "{member.name}" - **{count}** {word}.')
+
+    @commands.command()
+    async def топ(self, ctx):
+        per_page=5
+        page=1
+        total_users=get_total_users_count()
+        if total_users==0:
+            await ctx.send('🕯️Никто свечек пока не получал.')
+            return
+        users=get_top_candlers(page=page, per_page=per_page)
+        total_pages = (total_users + per_page - 1) // per_page
+
+        embed = discord.Embed(
+            title="🏆 Топ пользователей по свечкам",
+            color=discord.Color.gold()
+        )
+        lines=[]
+        for idx, (user_id, count) in enumerate(users, start=(page-1)*per_page+1):
+            user = self.bot.get_user(user_id)
+            if user is None:
+                try:
+                    user = await self.bot.fetch_user(user_id)
+                except discord.NotFound:
+                    user = None
+            name=user.name if user else "Неизвестный пользователь"
+            word=declension_candles(count)
+            medals = {
+                1: "🥇 ",
+                2: "🥈 ",
+                3: "🥉 "
+            }
+            medal = medals.get(idx, "")
+            lines.append(f"`{idx}.` {medal}{name} — **{count}** {word}")
+        embed.description = "\n".join(lines)
+        embed.set_footer(
+            text=f"Страница {page} из {(total_users + per_page - 1) // per_page}  •  Всего участников: {total_users}")
+        view = TopView(ctx.author.id, page, per_page, total_pages)
+        await ctx.send(embed=embed, view=view)
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
