@@ -1,4 +1,3 @@
-import discord
 import random
 from discord.ext import commands
 
@@ -15,21 +14,32 @@ class General(commands.Cog):
         await ctx.send(f'Понг! {round(self.bot.latency * 1000)}мс')
 
     @commands.command(aliases=['ролл', 'roll'])
-    async def шанс(self, ctx, grani: int, *, rest: str = ""):
+    async def шанс(self, ctx, first, *, rest: str = ""):
+        try:
+            grani=int(first)
+        except ValueError:
+            raw = f"{first} {rest}"
+            parts = [p.strip() for p in raw.split(',') if p.strip()]
+            if not parts:
+                await ctx.send("❌Пусто!")
+                return
+            choice = random.choice(parts)
+            await ctx.send(f'{choice}')
+            return
+
         kubiki=1
-        text=rest
 
         if rest:
             parts=rest.split()
             if parts[0].isdigit():
                 kubiki=int(parts[0])
-                text=' '.join(parts[1:])
 
         if kubiki>100000000:
             await ctx.send("❌Иди нахуй!")
             return
         if grani < 1 or kubiki <1:
             await ctx.send("❌Граней и/или кубиков не может быть меньше 1!")
+            return
         results=[random.randint(1, grani) for _ in range(kubiki)]
         total=sum(results)
         if kubiki==1:
