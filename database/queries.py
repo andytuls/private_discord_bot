@@ -1,4 +1,3 @@
-import sqlite3
 from .db import get_connection
 
 def has_user_reacted(user_id: int, message_id: int) -> bool:

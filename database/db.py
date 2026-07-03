@@ -1,7 +1,7 @@
 import sqlite3
 import os
 
-DB_PATH=os.path.join(os.path.dirname((os.path.dirname(__file__))), 'reactions.db')
+DB_PATH=os.path.join(os.path.dirname((os.path.dirname(__file__))), 'bot.db')
 
 def get_connection():
     conn=sqlite3.connect(DB_PATH)
@@ -10,7 +10,9 @@ def get_connection():
 
 def init_db():
     with get_connection() as conn:
-        conn.execute('''
+        conn.execute(
+            # ===== Таблицы для свечей =====
+            '''
         CREATE TABLE IF NOT EXISTS reaction_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
@@ -27,3 +29,32 @@ def init_db():
             count INTEGER DEFAULT 0
             )
         ''')
+
+        # ===== Таблицы для игры в слова =====
+
+        conn.execute('''
+        CREATE TABLE IF NOT EXISTS game_state (
+            id INTEGER PRIMARY KEY CHECK (id = 1),
+            current_letter TEXT,
+            total_words_used INTEGER DEFAULT 0,
+            last_player_id INTEGER
+            )    
+        ''')
+
+        conn.execute('''
+                    INSERT OR IGNORE INTO game_state (id, current_letter, total_words_used, last_player_id)
+                    VALUES (1, NULL, 0, NULL)
+                ''')
+        conn.execute('''
+                    CREATE TABLE IF NOT EXISTS used_words (
+                        word TEXT PRIMARY KEY
+                    )
+                ''')
+
+        conn.execute('''
+                    CREATE TABLE IF NOT EXISTS player_stats (
+                        user_id INTEGER PRIMARY KEY,
+                        words_count INTEGER DEFAULT 0,
+                        letter_counts TEXT DEFAULT '{}'
+                    )
+                ''')

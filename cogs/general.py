@@ -21,10 +21,10 @@ class General(commands.Cog):
             raw = f"{first} {rest}"
             parts = [p.strip() for p in raw.split(',') if p.strip()]
             if not parts:
-                await ctx.send("❌Пусто!")
+                await ctx.reply("❌Пусто!")
                 return
             choice = random.choice(parts)
-            await ctx.send(f'{choice}')
+            await ctx.reply(f'{choice}')
             return
 
         kubiki=1
@@ -35,24 +35,24 @@ class General(commands.Cog):
                 kubiki=int(parts[0])
 
         if kubiki>100000000:
-            await ctx.send("❌Иди нахуй!")
+            await ctx.reply("❌Иди нахуй!")
             return
         if grani < 1 or kubiki <1:
-            await ctx.send("❌Граней и/или кубиков не может быть меньше 1!")
+            await ctx.reply("❌Граней и/или кубиков не может быть меньше 1!")
             return
         results=[random.randint(1, grani) for _ in range(kubiki)]
         total=sum(results)
         if kubiki==1:
-            await ctx.send(f'Выпало **{total}** из {grani}')
+            await ctx.reply(f'Выпало **{total}** из {grani}')
         else:
             if kubiki<=8:
                 rolls_str=' + '.join(map(str, results))
-                await ctx.send(f'Выпало: {rolls_str} = **{total}** из {grani * kubiki}')
+                await ctx.reply(f'Выпало: {rolls_str} = **{total}** из {grani * kubiki}')
             else:
                 first=results[:3]
                 last=results[-3:]
                 rolls_str = ' + '.join(map(str, first)) + ' + ... + ' + ' + '.join(map(str, last))
-                await ctx.send(f'Выпало: {rolls_str} = **{total}** из {grani * kubiki}')
+                await ctx.reply(f'Выпало: {rolls_str} = **{total}** из {grani * kubiki}')
 
 async def setup(bot):
     await bot.add_cog(General(bot))

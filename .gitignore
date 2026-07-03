@@ -6,15 +6,16 @@ env/
 .vscode/
 .env
 *.env
-config_local.py  # если хранишь токены в отдельном файле
+config_local.py
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
-# Системные
 .DS_Store
 Thumbs.db
 *.db
 *.db-shm
 *.db-wal
+nouns/
+temp.py
