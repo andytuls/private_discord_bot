@@ -7,6 +7,8 @@ from database.word_queries import (
     update_words_player_stats,
     get_words_player_stats,
     get_top_user,
+    get_all_used_words,
+    increment_hints_used,
     reset_word_game
 )
 from discord.ext import commands
@@ -28,6 +30,13 @@ class Words(commands.Cog):
             return False
         return True
 
+    def get_next_letter(word: str, used_words_set: set) -> str or None:
+        for ch in reversed(word):
+            available = _WORDS_BY_LETTER.get(ch, set()) - used_words_set
+            if available:
+                return ch
+        return None
+
     @commands.command()
     async def перезапуск_слов(self, ctx):
         if ctx.author.id == 506130236136620043:
@@ -44,13 +53,20 @@ class Words(commands.Cog):
         state = get_words_state()
         needed_letter = state.get('current_letter')
         if not needed_letter:
-            await ctx.send("Игра ещё не началась.")
+            await ctx.send("Буква свободна! Говори что хочешь.")
             return
-        words = _WORDS_BY_LETTER.get(needed_letter, set())
-        if not words:
-            await ctx.send("Бля, да я сам хз! Чёт слова кончились")
+        all_words_for_letter  = _WORDS_BY_LETTER.get(needed_letter, set())
+        if not all_words_for_letter:
+            await ctx.send("❌Хз что сказать...")
             return
-        await ctx.send(random.choice(list(words)))
+        used_words_set = get_all_used_words()
+        available_words = all_words_for_letter - used_words_set
+        if not available_words:
+            await ctx.send("я хз честно что делать в такой ситуации")
+            return
+        word = random.choice(list(available_words))
+        increment_hints_used(ctx.author.id)
+        await ctx.send(f"💡 Бедолага, слушай мою подсказку: **{word}**")
 
     @commands.command()
     async def слова(self, ctx):
@@ -61,6 +77,7 @@ class Words(commands.Cog):
         total_words_used = state['total_words_used']
         top_user = get_top_user()
         total_words=len(ALL_WORDS)
+
 
         embed1 = discord.Embed(
             title="📊 Статистика игры в слова",
@@ -154,6 +171,11 @@ class Words(commands.Cog):
                 value="Вы пока не назвали ни одного слова",
                 inline=False
             )
+        embed2.add_field(
+            name="😂 Моих подсказок использовано",
+            value=f"**{player_stats['hints_used']}**",
+            inline=False
+        )
         embed2.set_footer(text="Страница 2 из 2 • Ваша личная статистика")
 
         class StatsView(discord.ui.View):
@@ -210,10 +232,10 @@ class Words(commands.Cog):
             return
 
         add_used_word(word)
+        used_words_set=get_all_used_words()
         update_words_player_stats(message.author.id, word[0])
-        new_letter = word[-2] if word[-1] in ('ь', 'ъ', 'ы') and len(word) > 1 else word[-1]
         new_total=state['total_words_used'] + 1
-        update_words_state(current_letter=new_letter,
+        update_words_state(current_letter=self.get_next_letter(word, used_words_set),
                            total_words_used=new_total,
                            last_player_id=message.author.id)
 

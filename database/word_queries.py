@@ -51,14 +51,15 @@ def update_words_player_stats(user_id: int, first_letter: str):
 def get_words_player_stats(user_id: int):
     with get_connection() as conn:
         cursor = conn.execute(
-            'SELECT words_count, letter_counts FROM player_stats WHERE user_id = ?',
+            'SELECT words_count, letter_counts, hints_used FROM player_stats WHERE user_id = ?',
             (user_id,)
         )
         row = cursor.fetchone()
         if row:
             return {
                 'words_count': row[0],
-                'letter_counts': json.loads(row[1]) if row[1] else {}
+                'letter_counts': json.loads(row[1]) if row[1] else {},
+                'hints_used': row[2] or 0
             }
         return None
 
@@ -77,6 +78,19 @@ def get_top_user():
                 'words_count': row[1]
             }
         return None
+
+def get_all_used_words() -> set:
+    with get_connection() as conn:
+        cursor = conn.execute('SELECT word FROM used_words')
+        return {row[0] for row in cursor.fetchall()}
+
+def increment_hints_used(user_id: int):
+    with get_connection() as conn:
+        conn.execute('''
+            INSERT INTO player_stats (user_id, hints_used)
+            VALUES (?, 1)
+            ON CONFLICT(user_id) DO UPDATE SET hints_used = hints_used + 1
+        ''', (user_id,))
 
 def reset_word_game():
     with get_connection() as conn:

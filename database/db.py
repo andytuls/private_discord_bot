@@ -55,6 +55,13 @@ def init_db():
                     CREATE TABLE IF NOT EXISTS player_stats (
                         user_id INTEGER PRIMARY KEY,
                         words_count INTEGER DEFAULT 0,
-                        letter_counts TEXT DEFAULT '{}'
+                        letter_counts TEXT DEFAULT '{}',
+                        hints_used INTEGER DEFAULT 0
                     )
                 ''')
+
+        cursor = conn.execute("PRAGMA table_info(player_stats)")
+        columns = [row[1] for row in cursor.fetchall()]
+        if 'hints_used' not in columns:
+            conn.execute('ALTER TABLE player_stats ADD COLUMN hints_used INTEGER DEFAULT 0')
+            print("✅ Обновлена таблица player_stats: добавлена колонка hints_used")
