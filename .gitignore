@@ -19,5 +19,6 @@ Thumbs.db
 *.db-wal
 nouns/
 temp.py
-nouns.txt
-bot.db
+data/nouns.txt
+data/bot.db
+data/

@@ -5,7 +5,7 @@ _WORDS_BY_LETTER = None
 
 def load_dictionary():
     global ALL_WORDS, _WORDS_BY_LETTER
-    file_path = os.path.join(os.path.dirname(__file__), '..', 'nouns.txt')
+    file_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'nouns.txt')
     file_path = os.path.abspath(file_path)
 
     if not os.path.exists(file_path):
