@@ -13,6 +13,26 @@ class General(commands.Cog):
     async def пинг(self, ctx):
         await ctx.send(f'Понг! {round(self.bot.latency * 1000)}мс')
 
+    @commands.command()
+    async def повтори(self, ctx, *, text: str = None):
+        if not text:
+            await ctx.send("❌ А что повторять-то?", delete_after=5)
+            return
+        await ctx.message.delete()
+        t = text.lower()
+        if "бараш" in t:
+            await ctx.send("Я о своём отце предпочитаю не говорить.")
+        elif "валентин" in t or "я" in t:
+            await ctx.send("Нет.")
+        elif "арбуз" in t or "сок" in t:
+            await ctx.send("Когда апдейт?")
+        elif "гей" in t or "пидор" in t or "пидр" in t:
+            await ctx.send("Такое я не поддерживаю.")
+        elif "организация" in t:
+            await ctx.send("Ты хочешь знать больше? Впрочем, узнаешь и так.")
+        else:
+            await ctx.send(text)
+
     @commands.command(aliases=['ролл', 'roll'])
     async def шанс(self, ctx, first, *, rest: str = ""):
         try:

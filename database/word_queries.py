@@ -87,10 +87,28 @@ def get_all_used_words() -> set:
 def increment_hints_used(user_id: int):
     with get_connection() as conn:
         conn.execute('''
-            INSERT INTO player_stats (user_id, hints_used)
-            VALUES (?, 1)
+            INSERT INTO player_stats (user_id, words_count, hints_used)
+            VALUES (?, 0, 1)
             ON CONFLICT(user_id) DO UPDATE SET hints_used = hints_used + 1
         ''', (user_id,))
+
+def get_top_players(limit=5):
+    with get_connection() as conn:
+        cursor = conn.execute('''
+            SELECT user_id, words_count, hints_used
+            FROM player_stats
+            ORDER BY words_count DESC
+            LIMIT ?
+        ''', (limit,))
+
+        return [
+            {
+                "user_id": row[0],
+                "words_count": row[1],
+                "hints_used": row[2]
+            }
+            for row in cursor.fetchall()
+        ]
 
 def reset_word_game():
     with get_connection() as conn:

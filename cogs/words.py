@@ -9,6 +9,7 @@ from database.word_queries import (
     get_top_user,
     get_all_used_words,
     increment_hints_used,
+    get_top_players,
     reset_word_game
 )
 from discord.ext import commands
@@ -30,7 +31,8 @@ class Words(commands.Cog):
             return False
         return True
 
-    def get_next_letter(word: str, used_words_set: set) -> str or None:
+    @staticmethod
+    def get_next_letter(word: str, used_words_set: set) -> str | None:
         for ch in reversed(word):
             available = _WORDS_BY_LETTER.get(ch, set()) - used_words_set
             if available:
@@ -77,6 +79,31 @@ class Words(commands.Cog):
         total_words_used = state['total_words_used']
         top_user = get_top_user()
         total_words=len(ALL_WORDS)
+        top_players = get_top_players(5)
+        header = (
+            "```"
+            "№  Игрок            Слова   %       💡\n"
+            "----------------------------------------\n"
+        )
+
+        rows = ""
+        for i, p in enumerate(top_players, start=1):
+            try:
+                user = await self.bot.fetch_user(p["user_id"])
+                name = user.display_name
+            except:
+                name = f"User {p['user_id']}"
+
+            percent = (p["words_count"] / total_words_used * 100) if total_words_used else 0
+
+            name = name[:15].ljust(15)
+            words = str(p["words_count"]).ljust(6)
+            percent = f"{percent:.1f}%".ljust(7)
+            hints = str(p["hints_used"])
+
+            rows += f"{i:<2} {name} {words} {percent} {hints}\n"
+
+        table = header + rows + "```"
 
 
         embed1 = discord.Embed(
@@ -178,26 +205,50 @@ class Words(commands.Cog):
         )
         embed2.set_footer(text="Страница 2 из 2 • Ваша личная статистика")
 
+        embed3 = discord.Embed(
+            title="📊 Топ игроков в слова",
+            color=discord.Color.gold()
+        )
+        embed3.add_field(
+            name="🏆 Лидеры",
+            value=table or "Пока нет данных",
+            inline=False
+        )
+
         class StatsView(discord.ui.View):
             def __init__(self):
                 super().__init__(timeout=120)
                 self.current_page = 1
 
+            def render(self):
+                if self.current_page == 1:
+                    return embed1
+                elif self.current_page == 2:
+                    return embed2
+                elif self.current_page == 3:
+                    return embed3
+
             @discord.ui.button(label="◀️ Назад", style=discord.ButtonStyle.secondary)
-            async def back_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            async def back_button(self, interaction, button):
                 if interaction.user.id != ctx.author.id:
                     await interaction.response.send_message("❌ Это не твоя статистика!", ephemeral=True)
                     return
-                self.current_page = 1
-                await interaction.response.edit_message(embed=embed1, view=self)
+                self.current_page = max(1, self.current_page - 1)
+                await interaction.response.edit_message(
+                    embed=self.render(),
+                    view=self
+                )
 
             @discord.ui.button(label="Вперёд ▶️", style=discord.ButtonStyle.primary)
-            async def forward_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+            async def forward_button(self, interaction, button):
                 if interaction.user.id != ctx.author.id:
                     await interaction.response.send_message("❌ Это не твоя статистика!", ephemeral=True)
                     return
-                self.current_page = 2
-                await interaction.response.edit_message(embed=embed2, view=self)
+                self.current_page = min(3, self.current_page + 1)
+                await interaction.response.edit_message(
+                    embed=self.render(),
+                    view=self
+                )
 
         view = StatsView()
         await ctx.send(embed=embed1, view=view)
@@ -235,10 +286,11 @@ class Words(commands.Cog):
         used_words_set=get_all_used_words()
         update_words_player_stats(message.author.id, word[0])
         new_total=state['total_words_used'] + 1
-        update_words_state(current_letter=self.get_next_letter(word, used_words_set),
-                           total_words_used=new_total,
-                           last_player_id=message.author.id)
-
+        update_words_state(
+            current_letter=self.get_next_letter(word, used_words_set),
+            total_words_used=new_total,
+            last_player_id=message.author.id
+        )
         await message.add_reaction("✅")
 
 
