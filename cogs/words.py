@@ -80,31 +80,22 @@ class Words(commands.Cog):
         top_user = get_top_user()
         total_words=len(ALL_WORDS)
         top_players = get_top_players(5)
-        header = (
-            "```"
-            "№  Игрок            Слова   %       💡\n"
-            "----------------------------------------\n"
-        )
 
-        rows = ""
-        for i, p in enumerate(top_players, start=1):
+        lines = []
+        medals = ["🥇", "🥈", "🥉"]
+
+        for i, p in enumerate(top_players):
             try:
                 user = await self.bot.fetch_user(p["user_id"])
                 name = user.display_name
             except:
                 name = f"User {p['user_id']}"
-
             percent = (p["words_count"] / total_words_used * 100) if total_words_used else 0
-
-            name = name[:15].ljust(15)
-            words = str(p["words_count"]).ljust(6)
-            percent = f"{percent:.1f}%".ljust(7)
-            hints = str(p["hints_used"])
-
-            rows += f"{i:<2} {name} {words} {percent} {hints}\n"
-
-        table = header + rows + "```"
-
+            medal = medals[i] if i < 3 else f"#{i + 1}"
+            line = f"{medal} {name} — {p['words_count']} слов • {percent:.1f}% • 💡{p['hints_used']}"
+            if p["user_id"] == ctx.author.id:
+                line = "👉 " + line + " 👈"
+            lines.append(line)
 
         embed1 = discord.Embed(
             title="📊 Статистика игры в слова",
@@ -150,7 +141,7 @@ class Words(commands.Cog):
                 value="Можно начать с любого слова",
                 inline=False
             )
-        embed1.set_footer(text="Страница 1 из 2 • Нажмите кнопку для личной статистики")
+        embed1.set_footer(text="Страница 1 из 3 • Общая статистика по игре")
 
 
         player_stats = get_words_player_stats(ctx.author.id)
@@ -203,17 +194,15 @@ class Words(commands.Cog):
             value=f"**{player_stats['hints_used']}**",
             inline=False
         )
-        embed2.set_footer(text="Страница 2 из 2 • Ваша личная статистика")
+        embed2.set_footer(text="Страница 2 из 3 • Ваша личная статистика")
 
         embed3 = discord.Embed(
-            title="📊 Топ игроков в слова",
+            title="🏆 Лидеры",
+            description="\n".join(lines) if lines else "Пока нет данных",
             color=discord.Color.gold()
         )
-        embed3.add_field(
-            name="🏆 Лидеры",
-            value=table or "Пока нет данных",
-            inline=False
-        )
+        embed3.set_footer(text="Страница 3 из 3 • Общий топ" )
+
 
         class StatsView(discord.ui.View):
             def __init__(self):
