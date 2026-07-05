@@ -17,6 +17,8 @@ from utils.dictionary import ALL_WORDS, _WORDS_BY_LETTER
 from config import WORD_CHANNEL_ID, MY_ID
 import random
 import utils.helpers as h
+import os
+import re
 
 class Words(commands.Cog):
     def __init__(self, bot):
@@ -50,6 +52,60 @@ class Words(commands.Cog):
             return
         reset_word_game()
         await ctx.send("✅ Игра в слова полностью сброшена!")
+
+    @commands.command()
+    async def дс(self, ctx, *, args: str=None):
+        if ctx.author.id != MY_ID:
+            await ctx.send("❌ Эта команда доступна только Барашу.")
+            return
+        if not args:
+            await ctx.send("❌ Укажи слова для добавления.")
+
+        words = re.split(r'[,\s\n]+', args.strip())
+        words = [w.lower().strip() for w in words if w.strip()]
+        if not words:
+            await ctx.send("❌ Не найдено слов для добавления.")
+            return
+
+        added = []
+        already_exist = []
+        invalid = []
+
+        for word in words:
+            if len(word) < 2:
+                invalid.append(f"'{word}' (слишком короткое)")
+                continue
+            if not re.fullmatch(r'[а-яё\-]+', word):
+                invalid.append(f"'{word}' (недопустимые символы)")
+                continue
+            if word in ALL_WORDS:
+                already_exist.append(word)
+                continue
+            ALL_WORDS.add(word)
+            first_letter = word[0]
+            if first_letter not in _WORDS_BY_LETTER:
+                _WORDS_BY_LETTER[first_letter] = set()
+            _WORDS_BY_LETTER[first_letter].add(word)
+            added.append(word)
+
+        if added:
+            file_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'nouns.txt')
+            file_path = os.path.abspath(file_path)
+            with open(file_path, 'a', encoding='utf-8') as f:
+                for word in added:
+                    f.write(word + '\n')
+
+        response = []
+        if added:
+            response.append(f"✅ Добавлено слов: {len(added)}\n`{', '.join(added[:10])}`" +
+                            (f" и ещё {len(added) - 10}" if len(added) > 10 else ""))
+        if already_exist:
+            response.append(f"⚠️ Уже есть: {len(already_exist)}\n`{', '.join(already_exist[:5])}`" +
+                            (f" и ещё {len(already_exist) - 5}" if len(already_exist) > 5 else ""))
+        if invalid:
+            response.append(f"❌ Пропущено (невалидные): {len(invalid)}")
+
+        await ctx.send("\n".join(response))
 
     @commands.command()
     async def подсказка(self, ctx):
@@ -105,8 +161,6 @@ class Words(commands.Cog):
             f"`{bar}` **{used}** / {total} слов ({percent:.1f}%)\n"
             f"Осталось ещё **{remaining}**."
         )
-
-
 
     @commands.command()
     async def слова(self, ctx):

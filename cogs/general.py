@@ -1,5 +1,6 @@
 import random
 from discord.ext import commands
+import re
 
 class General(commands.Cog):
     def __init__(self, bot):
@@ -15,11 +16,15 @@ class General(commands.Cog):
 
     @commands.command()
     async def повтори(self, ctx, *, text: str = None):
+        ALLOWED = re.compile(r"^[а-яё0-9\s.,!?\"'()\-:;]+$", re.IGNORECASE)
         if not text:
             await ctx.send("❌ А что повторять-то?", delete_after=5)
             return
         await ctx.message.delete()
         t = text.lower()
+        if not ALLOWED.fullmatch(t):
+            await ctx.send("❌ Нет-нет-нет. Я не стану повторять это.")
+            return
         if "бараш" in t:
             await ctx.send("Я о своём отце предпочитаю не говорить.")
         elif "валентин" in t or "я" in t:
