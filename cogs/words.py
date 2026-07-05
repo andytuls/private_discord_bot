@@ -16,6 +16,7 @@ from discord.ext import commands
 from utils.dictionary import ALL_WORDS, _WORDS_BY_LETTER
 from config import WORD_CHANNEL_ID, MY_ID
 import random
+import utils.helpers as h
 
 class Words(commands.Cog):
     def __init__(self, bot):
@@ -69,6 +70,43 @@ class Words(commands.Cog):
         word = random.choice(list(available_words))
         increment_hints_used(ctx.author.id)
         await ctx.send(f"💡 Бедолага, слушай мою подсказку: **{word}**")
+
+    @commands.command()
+    async def буква(self, ctx, letter: str = None):
+        if letter is None:
+            state = get_words_state()
+            if state is None:
+                await ctx.send("Ошибка!")
+                return
+            current_letter=state.get('current_letter')
+            if not current_letter:
+                await ctx.send("❌ Какую букву ты имеешь ввиду?")
+                return
+            letter = current_letter
+
+        letter = letter.lower().strip()
+        if letter not in _WORDS_BY_LETTER:
+            await ctx.send(f"❌ На букву **{letter.upper()}** нет слов в словаре.")
+            return
+
+        all_words=_WORDS_BY_LETTER[letter]
+        used_words=get_all_used_words()
+        used_for_letter=all_words & used_words
+        available_words=all_words-used_for_letter
+
+        total=len(all_words)
+        used=len(used_for_letter)
+        remaining=len(available_words)
+        percent = (used / total * 100) if total else 0
+        bar=h.progress_bar(used, total, 15)
+
+        await ctx.send(
+            f"📊 Буква **{letter.upper()}**:\n"
+            f"`{bar}` **{used}** / {total} слов ({percent:.1f}%)\n"
+            f"Осталось ещё **{remaining}**."
+        )
+
+
 
     @commands.command()
     async def слова(self, ctx):
