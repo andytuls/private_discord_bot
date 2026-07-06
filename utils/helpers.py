@@ -39,6 +39,39 @@ HELP_DATA = {
     }
 }
 
+MILESTONE_MESSAGES = {
+    10: {
+        "message": "Твой путь, {user}, только начинается... Ты достиг {count} свечек. 🕯️"
+    },
+    42: {
+        "message": "Каков ответ на все вопросы? {user} достиг {count} свечек 🕯️"
+    },
+    69: {
+        "message": "{user} достиг {count} свечек! 🕯️"
+    },
+    100: {
+        "message": "{user} заслуживает увжаения со своей {count} свечек. Обратись к Барашу для получения секретного приза. 🕯️🌟"
+    },
+    220: {
+        "message": "КАТАСТРОФА! {user} достиг {count} свечек! 🕯️"
+    },
+    420: {
+        "message": "Отдохни, братишка! {user} достиг {count} СВЕЧЕК 🕯️"
+    },
+    666: {
+        "message": "Сатана гордится. {user} достиг {count} свечек! 🕯️"
+    },
+    777: {
+        "message": "Повезло! {user} достиг {count} свечек! 🕯️"
+    },
+    1000: {
+        "message": "Твой путь был легендарен.  {user} покорил {count} свечек 🕯️👑. Обратись к Барашу для получения секретного приза."
+    },
+    "multiple_of_100": {
+        "message": "Новый рубеж. {user} достиг {count} свечек! 🕯️"
+    }
+}
+
 def generate_embed(section_key: str) -> discord.Embed:
     section = HELP_DATA[section_key]
     embed = discord.Embed(

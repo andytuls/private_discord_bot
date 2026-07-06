@@ -8,6 +8,7 @@ from database.queries import (
     get_total_users_count,
     get_top_candlers
 )
+from utils.helpers import MILESTONE_MESSAGES
 
 def declension_candles(count: int) -> str:
     if count%10==1 and count%100!=11:
@@ -16,6 +17,16 @@ def declension_candles(count: int) -> str:
         return "свечки"
     else:
         return "свечек"
+
+def should_send_milestone(new_count: int) -> bool:
+    return new_count in (10, 42, 69, 100, 220, 420, 666, 777, 1000, 10000) or new_count % 100 == 0
+
+def get_milestone_message(user_name: str, count: int) -> str:
+    if count in MILESTONE_MESSAGES:
+        return MILESTONE_MESSAGES[count].format(user=user_name, count=count)
+    elif count % 100 == 0:
+        return MILESTONE_MESSAGES["multiple_of_100"].format(user=user_name, count=count)
+    return None
 
 class TopView(discord.ui.View):
     def __init__(self, user_id: int, page: int, per_page: int, total_pages: int):
@@ -158,7 +169,19 @@ class Reactions(commands.Cog):
             message_id=payload.message_id,
             guild_id=payload.guild_id
         )
-        increment_candle_count(target_user.id)
+        new_count = increment_candle_count(target_user.id)
+        if should_send_milestone(new_count):
+            user = self.bot.get_user(target_user.id)
+            if user is None:
+                try:
+                    user = await self.bot.fetch_user(target_user.id)
+                except discord.NotFound:
+                    user = None
+            if user:
+                message_text = get_milestone_message(user.display_name, new_count)
+                if message_text:
+                    await channel.send(message_text)
 
 async def setup(bot):
     await bot.add_cog(Reactions(bot))
+ё
