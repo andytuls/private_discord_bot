@@ -40,6 +40,7 @@ class HelpView(discord.ui.View):
 class General(commands.Cog):
     def __init__(self, bot):
         self.bot=bot
+        self.last_help_user = None
 
     @commands.command()
     async def привет(self, ctx):
@@ -51,6 +52,21 @@ class General(commands.Cog):
 
     @commands.command(aliases=['справка'])
     async def помощь(self, ctx):
+        if self.last_help_user == ctx.author.id:
+            funny_responses = [
+                "ставь лайк если у тебя альцгеймер",
+                "перечитай, я повторять не хочу",
+                "ало? справка выше",
+                "справка не менялась.",
+                "ты издеваешься?",
+                "ты лоупх?",
+                "*звук сверчков*"
+                "Справка переехала: https://youtu.be/dQw4w9WgXcQ"
+            ]
+            await ctx.send(random.choice(funny_responses))
+            self.last_help_user = None
+            return
+        self.last_help_user = ctx.author.id
         embed = generate_embed("главная")
         view = HelpView(current_section="главная")
         await ctx.send(embed=embed, view=view)

@@ -23,9 +23,9 @@ def should_send_milestone(new_count: int) -> bool:
 
 def get_milestone_message(user_name: str, count: int) -> str:
     if count in MILESTONE_MESSAGES:
-        return MILESTONE_MESSAGES[count].format(user=user_name, count=count)
+        return MILESTONE_MESSAGES[count]["message"].format(user=user_name, count=count)
     elif count % 100 == 0:
-        return MILESTONE_MESSAGES["multiple_of_100"].format(user=user_name, count=count)
+        return MILESTONE_MESSAGES["multiple_of_100"]["message"].format(user=user_name, count=count)
     return None
 
 class TopView(discord.ui.View):
