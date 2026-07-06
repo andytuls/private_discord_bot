@@ -1,6 +1,41 @@
 import random
+import discord
 from discord.ext import commands
-import re
+from utils.helpers import HELP_DATA, generate_embed
+
+class SectionButton(discord.ui.Button):
+    def __init__(self, section: str):
+        label = section.capitalize()
+        super().__init__(label=label, style=discord.ButtonStyle.primary)
+        self.section = section
+
+    async def callback(self, interaction: discord.Interaction):
+        embed = generate_embed(self.section)
+        view = HelpView(current_section=self.section)
+        await interaction.response.edit_message(embed=embed, view=view)
+
+class BackButton(discord.ui.Button):
+    def __init__(self):
+        super().__init__(label="◀️ Назад", style=discord.ButtonStyle.secondary)
+
+    async def callback(self, interaction: discord.Interaction):
+        embed = generate_embed("главная")
+        view = HelpView(current_section="главная")
+        await interaction.response.edit_message(embed=embed, view=view)
+
+class HelpView(discord.ui.View):
+    def __init__(self, current_section: str = "главная"):
+        super().__init__(timeout=240)
+        self.current_section = current_section
+        self.add_section_buttons()
+
+    def add_section_buttons(self):
+        if self.current_section != "главная":
+            self.add_item(BackButton())
+
+        if self.current_section == "главная":
+            for section in HELP_DATA["главная"]["sections"]:
+                self.add_item(SectionButton(section))
 
 class General(commands.Cog):
     def __init__(self, bot):
@@ -13,6 +48,12 @@ class General(commands.Cog):
     @commands.command()
     async def пинг(self, ctx):
         await ctx.send(f'Понг! {round(self.bot.latency * 1000)}мс')
+
+    @commands.command(aliases=['справка'])
+    async def помощь(self, ctx):
+        embed = generate_embed("главная")
+        view = HelpView(current_section="главная")
+        await ctx.send(embed=embed, view=view)
 
     @commands.command()
     async def повтори(self, ctx, *, text: str = None):
