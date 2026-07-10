@@ -17,6 +17,7 @@ async def main():
     await bot.load_extension('cogs.general')
     await bot.load_extension('cogs.reactions')
     await bot.load_extension('cogs.words')
+    await bot.load_extension('cogs.tasks')
     await bot.start(TOKEN)
 
 import asyncio
