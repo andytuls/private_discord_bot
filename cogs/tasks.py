@@ -15,12 +15,12 @@ class Tasks(commands.Cog):
         self.words = tuple(ALL_WORDS)
         self.task = None
 
-        async def cog_load(self):
-            self.task = self.bot.loop.create_task(self.midnight_loop())
+    async def cog_load(self):
+        self.task = self.bot.loop.create_task(self.midnight_loop())
 
-        async def cog_unload(self):
-            if self.task:
-                self.task.cancel()
+    async def cog_unload(self):
+        if self.task:
+            self.task.cancel()
 
     async def midnight_loop(self):
         await self.bot.wait_until_ready()

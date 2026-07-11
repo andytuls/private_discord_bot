@@ -77,7 +77,7 @@ class General(commands.Cog):
             await ctx.send("❌ А что повторять-то?", delete_after=5)
             return
         await ctx.message.delete()
-        await ctx.send(text)
+        await ctx.send(text, allowed_mentions=discord.AllowedMentions.none())
 
     @commands.command(aliases=['ролл', 'roll'])
     async def шанс(self, ctx, first, *, rest: str = ""):
