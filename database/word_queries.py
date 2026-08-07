@@ -1,6 +1,8 @@
 from .db import get_connection
 import json
 
+_UNSET = object()
+
 def get_words_state():
     with get_connection() as conn:
         cursor=conn.execute('SELECT current_letter, total_words_used, last_player_id FROM game_state WHERE id = 1')
@@ -13,13 +15,17 @@ def get_words_state():
             }
         return None
 
-def update_words_state(current_letter=None, total_words_used=None, last_player_id=None):
+def update_words_state(
+    current_letter=_UNSET,
+    total_words_used=_UNSET,
+    last_player_id=_UNSET,
+):
     with get_connection() as conn:
-        if current_letter is not None:
+        if current_letter is not _UNSET:
             conn.execute('UPDATE game_state SET current_letter = ? WHERE id = 1', (current_letter,))
-        if total_words_used is not None:
+        if total_words_used is not _UNSET:
             conn.execute('UPDATE game_state SET total_words_used = ? WHERE id = 1', (total_words_used,))
-        if last_player_id is not None:
+        if last_player_id is not _UNSET:
             conn.execute('UPDATE game_state SET last_player_id = ? WHERE id = 1', (last_player_id,))
 
 def is_word_used(word: str) -> bool:

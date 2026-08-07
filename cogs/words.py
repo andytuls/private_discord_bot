@@ -364,15 +364,27 @@ class Words(commands.Cog):
             return
 
         add_used_word(word)
-        used_words_set=get_all_used_words()
+        used_words_set = get_all_used_words()
         update_words_player_stats(message.author.id, word[0])
-        new_total=state['total_words_used'] + 1
+        new_total = state['total_words_used'] + 1
+        next_letter = self.get_next_letter(word, used_words_set)
         update_words_state(
-            current_letter=self.get_next_letter(word, used_words_set),
+            current_letter=next_letter,
             total_words_used=new_total,
             last_player_id=message.author.id
         )
         await message.add_reaction("✅")
+
+        last_letter = word[-1]
+        if next_letter is None:
+            await message.channel.send(
+                "🔓 Слова на все буквы этого слова закончились — можно назвать **любое** слово!"
+            )
+        elif next_letter != last_letter:
+            await message.channel.send(
+                f"↩️ На **{last_letter.upper()}** слов не осталось. "
+                f"Следующее слово — на **{next_letter.upper()}**!"
+            )
 
 
 

@@ -16,7 +16,7 @@ class Tasks(commands.Cog):
         self.task = None
 
     async def cog_load(self):
-        self.task = self.bot.loop.create_task(self.midnight_loop())
+        self.task = asyncio.create_task(self.midnight_loop())
 
     async def cog_unload(self):
         if self.task:
